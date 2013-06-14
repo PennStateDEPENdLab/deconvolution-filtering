@@ -9,6 +9,9 @@
 
 #include <cmath>
 #include <armadillo>
+#include <boost/iostreams/device/file.hpp>
+#include <boost/iostreams/stream.hpp>
+#include <boost/filesystem.hpp>
 
 namespace df {
 
@@ -95,7 +98,18 @@ namespace df {
 		return hrf;
 	}
 
-	
+	arma::vec activation_test_data() {
+		boost::iostreams::stream<boost::iostreams::file_source> file("../data/activation.txt");
+
+        std::string line;
+
+        std::getline(file, line);
+
+        //LOG(INFO) << line;
+
+        arma::vec x(line);
+        return x;
+	}
 
 	class DeconvovleFilterTask {
 	public:
@@ -148,16 +162,22 @@ namespace df {
 
 			arma::vec data_adjust = data_(range_uvec(start, end));
 
-			LOG(INFO) << data_adjust;
+			//LOG(INFO) << data_adjust;
 
 			arma::vec encoding = data_adjust - arma::min(data_adjust);
 			encoding = encoding / arma::max(encoding);
 
-			LOG(INFO) << encoding;
+			//LOG(INFO) << encoding;
 			//%Construct activation vector
 			// activation = zeros(A,1)+(2E-9).*rand(A,1)+(-1E-9);
-  			arma::vec activation = arma::ones(A); //arma::randu<arma::vec>(A) * (2E-9) - (1E-9);
-  			//LOG(INFO) << activation;
+  			arma::vec activation = activation_test_data(); //arma::randu<arma::vec>(A) * (2E-9) - (1E-9);
+  			LOG(INFO) << activation;
+
+  			arma::uvec activation_indices = range_uvec(K, (K-1 + data_adjust.n_elem));
+
+  			LOG(INFO) << arma::log(encoding)/(1-encoding);
+
+  			//activation(activation_indices) = 
 
 		}
 
