@@ -110,6 +110,32 @@ namespace df {
         arma::vec x(line);
         return x;
 	}
+	/*
+	function y = sigmoid(x)
+    	y=(1./(1+exp(-x)));
+	end
+	*/
+	arma::vec sigmoid(const arma::vec& x) {
+		return 1 / (1 + arma::exp(x * -1));
+	}
+
+	arma::mat generate_feature(const arma::vec& encoding, int K) {
+
+		int n = encoding.n_elem;
+		arma::mat fmatrix = arma::zeros(n, K);
+
+		LOG(INFO) << "fmatrix: n_rows: " << fmatrix.n_rows << "; n_cols: " << fmatrix.n_cols;
+		//LOG(INFO) << fmatrix;
+		//fmatrix.col(0) = encoding;
+		for (int i = 0; i < K; i ++){
+
+			arma::vec fill_in = arma::zeros(n);
+			fill_in(range_uvec(i, n -1)) = encoding(range_uvec(0, n - i -1));
+			fmatrix.col(i) = fill_in;
+			
+		}
+		return fmatrix;
+	}
 
 	class DeconvovleFilterTask {
 	public:
@@ -171,14 +197,33 @@ namespace df {
 			//%Construct activation vector
 			// activation = zeros(A,1)+(2E-9).*rand(A,1)+(-1E-9);
   			arma::vec activation = activation_test_data(); //arma::randu<arma::vec>(A) * (2E-9) - (1E-9);
-  			LOG(INFO) << activation;
+  			//LOG(INFO) << activation;
 
-  			arma::uvec activation_indices = range_uvec(K, (K-1 + data_adjust.n_elem));
+  			arma::uvec activation_indices = range_uvec(K, (K-1 + data_adjust.n_elem)) - 1;
+  			
+  			activation(activation_indices) = arma::log(encoding/(1-encoding));
 
-  			LOG(INFO) << arma::log(encoding)/(1-encoding);
+  			//LOG(INFO) << activation;
+  			
+  			while(std::abs(preverror - currerror) > eps_) {
 
-  			//activation(activation_indices) = 
+  				//%Compute encoding vector
+   				encoding = sigmoid(activation);
 
+
+   				// %Construct feature space
+    			arma::mat feature = generate_feature(encoding,K);
+
+    			LOG(INFO) << feature.n_rows;
+    			LOG(INFO) << K;
+    			arma::uvec ytilde_indicies = range_uvec(K - 1, feature.n_rows - 1);
+
+    			arma::mat ytilde feature.rows(ytilde_indicies);
+    			// %Generate virtual bold response    			
+    			// ytilde = feature(K:size(feature,1),:)*kernel;
+
+   				std::exit(1);
+  			}
 		}
 
 	private:

@@ -83,6 +83,8 @@ TEST(DeconvolveFilter, deconvolveSingleThreadTest) {
             if( arma::sum(x) == 0.0) {
                 continue;
             }
+
+            LOG(INFO) << i;
             double m = arma::mean(x);
 
             x = x - m;

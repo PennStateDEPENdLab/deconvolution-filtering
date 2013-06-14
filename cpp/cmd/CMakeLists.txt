@@ -2,7 +2,7 @@ set (deconvolvefilter_test_SRCS
   deconvolvefilter_test.cc
   )
 
-SET (deconvolvefilter_test_LIBS ${Boost_LIBRARIES} ${glog_LIBRARIES} pthread gmock_main ${gflags_LIBRARIES} ${PROJECT_NAME})
+SET (deconvolvefilter_test_LIBS ${Boost_LIBRARIES} ${glog_LIBRARIES} pthread gmock_main ${gflags_LIBRARIES}) # ${PROJECT_NAME} header only library, don't need to link
 SET (deconvolvefilter_test_BIN deconvolvefilter_test)
 
 IF(WITH_GPERF_TOOLS)

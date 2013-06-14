@@ -5,9 +5,10 @@
 #
 CMAKE_MINIMUM_REQUIRED (VERSION 2.8.10)
 #CFLAGS="-arch x86_64" CXXFLAGS="-arch x86_64"
-set(CONFIGURATE_CFLAGS "-arch x86_64 -I/usr/local/include -I/usr/include")
-set(CONFIGURATE_CXXFLAGS "-arch x86_64 -I/usr/local/include -I/usr/include")
+set(CONFIGURATE_CFLAGS "-I/usr/local/include -I/usr/include")
+set(CONFIGURATE_CXXFLAGS "-I/usr/local/include -I/usr/include")
 set(CONFIGURATE_LDFLAGS "-L/usr/local/lib -L/usr/lib ")
+
 
 if (NOT _MAC_DEPENDENCY_PATHS)
 set(_MAC_DEPENDENCY_PATHS)
