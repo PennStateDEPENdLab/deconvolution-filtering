@@ -11,6 +11,7 @@
 #include <armadillo>
 #include <map>
 #include <mutex>
+#include <chrono>
 #include <thread>
 #include <iomanip>
 
@@ -36,6 +37,8 @@ DEFINE_double(lr, 0.01,
                  "learning rate, e.g., -lr=0.01");
 DEFINE_double(eps, 0.005,
                  "epsilon, stop criteria, the algorithm converges when error < eps e.g., -eps=0.005");
+DEFINE_int32(thread, 8,
+                 "number of concurrent threads, you should set this based on number of cores the machine has, e.g., quad-core machine with hyperthread enabled should set this to 8 (default) ");
 
 static bool requiredStringFlag(const char* flagname, const std::string& value) {
    if(value.empty()){
@@ -57,12 +60,30 @@ void save(int i, const std::string& s){
     map_mutex.unlock();
 }
 
+void draw_progress_bar(double percent) {
+  std::cout << "\x1B[2K"; // Erase the entire current line.
+  std::cout << "\x1B[0E"; // Move to the beginning of the current line.
+  std::string progress;
+  int len = 50;
+  for (int i = 0; i < len; ++i) {
+    if (i < static_cast<int>(len * percent)) {
+      progress += "=";
+    } else {
+      progress += " ";
+    }
+  }
+  
+  std::cout << "\r" "[" << progress << "] ";
+  std::cout.width( 3 );
+  std::cout << (static_cast<int>(100 * percent)) << "%" << std::flush;
+}
+
 void deconvolvefilter(const std::string& datafile, const std::string& outputfile) { 
 
     using namespace utils;
     using namespace df;
     Timer timer;
-    ThreadPool pool(8);
+    ThreadPool pool(FLAGS_thread);
     std::vector< std::future<void> > futures;    
     
    
@@ -78,7 +99,8 @@ void deconvolvefilter(const std::string& datafile, const std::string& outputfile
     //const std::string outputfile = "../result/solved.whole_brain.timeseries.txt";
 
     LOG(INFO) << "processing " << datafile << "; result will be saved in " << outputfile;
-    LOG(INFO) << "parameters: fo = " << FO << "; HRF_d = " << HRF_d << "; lr = " << lr << "; eps = " << eps;
+    LOG(INFO) << "thread pool size: " << FLAGS_thread;
+    LOG(INFO) << "parameters: FO = " << FO << "; HRF_d = " << HRF_d << "; lr = " << lr << "; eps = " << eps;
 
     if (!boost::filesystem::exists(datafile)) {
         LOG(ERROR) << datafile << " doesn't exist...";
@@ -88,6 +110,7 @@ void deconvolvefilter(const std::string& datafile, const std::string& outputfile
         std::string line;
         
         int i = 0;
+        LOG(INFO) << "ingest data from " << datafile;
         while (std::getline(file, line)) {
             i ++;
             arma::vec x(line);
@@ -114,18 +137,29 @@ void deconvolvefilter(const std::string& datafile, const std::string& outputfile
                     
                     save(i, ss.str());
                 })
-            ); 
+            );
         }
-        cnt = i;
+        cnt = i + 1;
+        LOG(INFO) << cnt << " tasks have been scheduled...";
     }
 
+    std::chrono::milliseconds dura( 10000 );
+    int progress = static_cast<int>(ordered_timeseries.size());
+
+    while(progress < cnt - 1) {
+        progress = static_cast<int>(ordered_timeseries.size());
+        draw_progress_bar(double(progress)/cnt);
+        std::this_thread::sleep_for( dura );
+    }
+
+    // don't really need to wait, just good practice to ensure threads are cleaned out
     for(size_t i = 0;i<futures.size();++i){
         futures[i].wait();
     }
 
     boost::iostreams::stream<boost::iostreams::file_sink> outfile(outputfile.c_str());
 
-    for(int i = 0; i < cnt + 1; i++) {
+    for(int i = 0; i < cnt; i++) {
         outfile << ordered_timeseries[i];
     }    
 
