@@ -21,10 +21,6 @@ namespace df {
 	// l - Scale parameter (l>0)
 	arma::vec gPDF(arma::vec x, double h, double l){
 		
-		//LOG(INFO) << "h: " << h << "; l: " << l;
-		//LOG(INFO) << "h * std::log(l): " << h * std::log(l);
-		//LOG(INFO) << "arma::log(x) * (h - 1): " << arma::log(x) * (h - 1);
-		//LOG(INFO) << "std::log(std::tgamma(h)): " << std::log(std::tgamma(h));
 		arma::vec r = arma::exp(h * std::log(l) + arma::log(x) * (h - 1) -  (x*l) - std::log(std::tgamma(h)));
 
 		return r;
@@ -93,7 +89,7 @@ namespace df {
 		// u   = [0:(p(7)/dt)] - p(6)/dt;
 		int l = p(7)/dt;
 
-		LOG(INFO) << "l: " << l;
+		//LOG(INFO) << "l: " << l;
 
 		arma::vec u = range_vec(0, l);
 		
@@ -207,34 +203,27 @@ namespace df {
 
 			//LOG(INFO) << "N: " << N << "; K: " << K << "; A: " << A << "; prev_error: " << preverror;
 
-			//LOG(INFO) << "max kernel: " << arma::max(kernel_) << "; pos: " << arma::find(kernel_ == arma::max(kernel_));
-
 			arma::uvec max_hrf_id_adjust = arma::find(kernel_ == arma::max(kernel_)) - 1;
 			int start = max_hrf_id_adjust.at(0);
 			int end = N - 1;
 			
 			//LOG(INFO) << "start: " << start << "; end: " << end;
-			//LOG(INFO) << range_uvec(start, end);
 
 			arma::vec data_adjust = data_(range_uvec(start, end));
 
-			//LOG(INFO) << data_adjust;
 
 			arma::vec encoding = data_adjust - arma::min(data_adjust);
 			encoding = encoding / arma::max(encoding);
 
-			//LOG(INFO) << encoding;
 			//%Construct activation vector
 			// activation = zeros(A,1)+(2E-9).*rand(A,1)+(-1E-9);
-  			arma::vec activation = activation_test_data(); //arma::randu<arma::vec>(A) * (2E-9) - (1E-9);
-  			//LOG(INFO) << activation;
+  			arma::vec activation = arma::randu<arma::vec>(A) * (2E-9) - (1E-9); // test activation data (activation_test_data();)
 
   			arma::uvec activation_indices = range_uvec(K, (K-1 + data_adjust.n_elem)) - 1;
   			
   			activation(activation_indices) = arma::log(encoding/(1-encoding));
 
-  			//LOG(INFO) << activation;
-  			
+ 			
   			while(std::abs(preverror - currerror) > eps_) {
 
   				//%Compute encoding vector
@@ -274,12 +263,10 @@ namespace df {
     			*/
     			arma::mat dEde = arma::eye<arma::mat>(K, K) * kernel_;
 
-    			//LOG(INFO) << dEde;
 
     			// back_error = [zeros(1,K-1),dEdy',zeros(1,K-1)];
 
     			arma::vec back_error = arma::zeros(dEdy.n_elem + 2 * (K-1));
-    			//LOG(INFO) << back_error.n_elem;
 
     			arma::uvec dEdy_indicies = range_uvec(K-1,K-2+dEdy.n_elem);
     			
@@ -305,8 +292,7 @@ namespace df {
     			// %Iterate Learning
     			preverror = currerror;
     			currerror = arma::sum(dEdbrf%dEdbrf);
-
-    			//LOG(INFO) << currerror;   			
+	
   			}
 
   			// %Convolve Solved NEV with the HRF Model

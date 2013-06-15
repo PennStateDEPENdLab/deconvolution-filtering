@@ -20,5 +20,12 @@ namespace df {
     EXTERNC int df_version_patch() {
     	return APPLICATION_VERSION_PATCH;
     }
+
+    EXTERNC std::string df_version_string() {
+    	std::stringstream ss;
+    	ss << df_version_major() << "." << df_version_minor() << "." << df_version_patch();
+
+    	return ss.str();
+    }
 }
 #endif

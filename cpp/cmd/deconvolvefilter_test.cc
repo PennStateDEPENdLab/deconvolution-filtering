@@ -89,10 +89,13 @@ TEST(DeconvolveFilter, deconvolveSingleThreadTest) {
             i ++;
             arma::vec x(line);
             
-            LOG(INFO) << "at: " << i;
+            //LOG(INFO) << "at: " << i;
             
             if( arma::sum(x) == 0.0) {
-                save(i, line);
+                std::stringstream ss;
+                ss << setprecision(6) << x.t();
+
+                save(i, ss.str());
                 continue;
             }
 
@@ -101,15 +104,14 @@ TEST(DeconvolveFilter, deconvolveSingleThreadTest) {
             x = x - m;
 
             futures.push_back(
-                pool.enqueue([i,x,&hrf,lr,eps](void) -> void {
-                    //LOG(INFO) << x.n_elem;
+                pool.enqueue([i,x,hrf,lr,eps](void) -> void {
                     DeconvovleFilterTask task(x, hrf, lr, eps);
                     std::stringstream ss;
-                    task.run().save(ss);
+                    ss << setprecision(6) << task.run().t();
                     
                     save(i, ss.str());
                 })
-            );          
+            ); 
         }
         cnt = i;
     }
@@ -120,8 +122,8 @@ TEST(DeconvolveFilter, deconvolveSingleThreadTest) {
 
     boost::iostreams::stream<boost::iostreams::file_sink> outfile(outputfile.c_str());
 
-    for(int i = 0; i < cnt; i++) {
-        outfile << ordered_timeseries[i] << "\n";
+    for(int i = 0; i < cnt + 1; i++) {
+        outfile << ordered_timeseries[i];
     }    
 
     outfile.flush();
