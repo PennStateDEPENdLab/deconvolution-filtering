@@ -47,7 +47,15 @@ mat get_timeseries(const string& filename) {
     return matrix;
 }
 
+std::mutex map_mutex;
+std::map<int, std::string> ordered_timeseries;
 //dlmwrite('whole_brain.timeseries.txt', whole_brain, 'delimiter', ' ','precision', 6)
+
+void save(int i, const std::string& s){
+    map_mutex.lock();
+    ordered_timeseries[i] = s;
+    map_mutex.unlock();
+}
 
 TEST(DeconvolveFilter, deconvolveSingleThreadTest) { 
 
@@ -55,8 +63,8 @@ TEST(DeconvolveFilter, deconvolveSingleThreadTest) {
     using namespace df;
     Timer timer;
     ThreadPool pool(8);
-    std::vector< std::future<void> > futures;
-
+    std::vector< std::future<void> > futures;    
+    
    
     double FO = 0.5;
     int HRF_d = 6;
@@ -65,7 +73,10 @@ TEST(DeconvolveFilter, deconvolveSingleThreadTest) {
     double lr = 0.01;
     double eps = 0.005;
 
-     const std::string datafile = "../data/whole_brain.timeseries.txt";
+    int cnt = 0;
+    const std::string datafile = "../data/whole_brain.timeseries.txt";
+    const std::string outputfile = "../result/solved.whole_brain.timeseries.txt";
+
     if (!boost::filesystem::exists(datafile)) {
         LOG(ERROR) << datafile << " doesn't exist...";
     } else {
@@ -78,67 +89,43 @@ TEST(DeconvolveFilter, deconvolveSingleThreadTest) {
             i ++;
             arma::vec x(line);
             
-            //LOG(INFO) << t.n_elem;
+            LOG(INFO) << "at: " << i;
             
             if( arma::sum(x) == 0.0) {
+                save(i, line);
                 continue;
             }
 
-            LOG(INFO) << i;
             double m = arma::mean(x);
 
             x = x - m;
 
-            DeconvovleFilterTask task(x, hrf, lr, eps);
-            task.run();
-
-            std::exit(1);
-        } 
-
+            futures.push_back(
+                pool.enqueue([i,x,&hrf,lr,eps](void) -> void {
+                    //LOG(INFO) << x.n_elem;
+                    DeconvovleFilterTask task(x, hrf, lr, eps);
+                    std::stringstream ss;
+                    task.run().save(ss);
+                    
+                    save(i, ss.str());
+                })
+            );          
+        }
+        cnt = i;
     }
 
-    //mat X = get_timeseries(datafile);
-
-    //int n_rows = X.n_rows;
-    //LOG(INFO) << "n_rows: " << X.n_rows << "; n_cols: " << X.n_cols;
-
-    //vec x(X.row(5000));
-
-    //LOG(INFO) << x.n_elem;
-    //DeconvovleFilterTask t(x, hrf, lr, eps);
-    //t.run();
-    /*
-    for(int i = 0; i < n_rows; ++i) {
-
-        
-
-        LOG(INFO)  << X.row(i);
+    for(size_t i = 0;i<futures.size();++i){
+        futures[i].wait();
     }
-    */
-    
 
+    boost::iostreams::stream<boost::iostreams::file_sink> outfile(outputfile.c_str());
 
-    //DeconvovleFilterTask t(X.rows(5000))
-       
-                            // futures.push_back(
+    for(int i = 0; i < cnt; i++) {
+        outfile << ordered_timeseries[i] << "\n";
+    }    
 
-                            //     pool.enqueue([patientID, entry, startTime, stopTime](void) -> void {
+    outfile.flush();
 
-                            //         std::stringstream ss;
-                            //         ss << "../result/" << patientID << entry.path().filename().string() << "." << startTime << "-" << stopTime << ".xml";                                
-                            //         //LOG(INFO) << "incoming: " << entry.path().string();
-                            //         //LOG(INFO) << "output: " << ss.str();
-                            //         //LOG(INFO) << "eventTS: " << "; startTime: " << startTime << "; stopTime: " << stopTime;
-                            //         XmlParser xmlParser(entry.path().string());
-                            //         xmlParser.filter(startTime, stopTime, ss.str());
-                                    
-                            //     })
-                            // );
-                        
-
-    // for(size_t i = 0;i<futures.size();++i){
-    //     futures[i].wait();
-    // }
     timer.report_elapsed();
 
 }

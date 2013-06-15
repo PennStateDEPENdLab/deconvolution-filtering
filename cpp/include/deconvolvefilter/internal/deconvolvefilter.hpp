@@ -54,6 +54,24 @@ namespace df {
 		return r;
 	}
 
+	// this function takes a vector of neural event and hrf kernel function and convolves the neural events and HRF function neural events
+	arma::vec convolve_anev_roi_hrf(const arma::vec& NEVgen, const arma::vec& kernel) {
+		int Bn = NEVgen.n_elem;
+		int Bk = kernel.n_elem;
+
+		arma::vec BLDgen = arma::zeros(Bn+Bk-1);
+
+		//LOG(INFO) << BLDgen.n_elem;
+
+		for(int i = 0; i < Bn; i ++){
+			BLDgen(range_uvec(i,i+Bk-1)) = NEVgen(i) * kernel + BLDgen(range_uvec(i,i+Bk-1));
+			//LOG(INFO) << BLDgen(range_uvec(i,i+Bk-1));
+		}
+
+		arma::vec r = BLDgen(range_uvec(0,Bn - 1));
+		return r;
+	}
+
 
 	//using namespace arma;
 	/**
@@ -119,12 +137,24 @@ namespace df {
 		return 1 / (1 + arma::exp(x * -1));
 	}
 
+	arma::vec dsigmoid(const arma::vec& x) {
+		return (1 - sigmoid(x)) * sigmoid(x);
+	}
+
+	double sigmoid(double x) {
+		return 1.0 / (1.0 + std::exp(x * -1));
+	}
+
+	double dsigmoid(double x) {
+		return (1.0 - sigmoid(x)) * sigmoid(x);
+	}
+
 	arma::mat generate_feature(const arma::vec& encoding, int K) {
 
 		int n = encoding.n_elem;
 		arma::mat fmatrix = arma::zeros(n, K);
 
-		LOG(INFO) << "fmatrix: n_rows: " << fmatrix.n_rows << "; n_cols: " << fmatrix.n_cols;
+		//LOG(INFO) << "fmatrix: n_rows: " << fmatrix.n_rows << "; n_cols: " << fmatrix.n_cols;
 		//LOG(INFO) << fmatrix;
 		//fmatrix.col(0) = encoding;
 		for (int i = 0; i < K; i ++){
@@ -163,7 +193,7 @@ namespace df {
 			%-Outputs
 			% encoding - reconstructed neural events
 		**/
-		void run() {
+		arma::vec run() {
 			// %Calc time related to observations
 			int N = data_.n_elem;
 
@@ -175,15 +205,15 @@ namespace df {
 			double preverror = 1e9;
 			double currerror = 0.0;
 
-			LOG(INFO) << "N: " << N << "; K: " << K << "; A: " << A << "; prev_error: " << preverror;
+			//LOG(INFO) << "N: " << N << "; K: " << K << "; A: " << A << "; prev_error: " << preverror;
 
 			//LOG(INFO) << "max kernel: " << arma::max(kernel_) << "; pos: " << arma::find(kernel_ == arma::max(kernel_));
 
 			arma::uvec max_hrf_id_adjust = arma::find(kernel_ == arma::max(kernel_)) - 1;
 			int start = max_hrf_id_adjust.at(0);
 			int end = N - 1;
-			//LOG(INFO) << "start: " << start << "; end: " << end;
 			
+			//LOG(INFO) << "start: " << start << "; end: " << end;
 			//LOG(INFO) << range_uvec(start, end);
 
 			arma::vec data_adjust = data_(range_uvec(start, end));
@@ -214,16 +244,83 @@ namespace df {
    				// %Construct feature space
     			arma::mat feature = generate_feature(encoding,K);
 
-    			LOG(INFO) << feature.n_rows;
-    			LOG(INFO) << K;
-    			arma::uvec ytilde_indicies = range_uvec(K - 1, feature.n_rows - 1);
-
-    			arma::mat ytilde feature.rows(ytilde_indicies);
     			// %Generate virtual bold response    			
     			// ytilde = feature(K:size(feature,1),:)*kernel;
+    			arma::uvec ytilde_indicies = range_uvec(K - 1, feature.n_rows - 1);
 
-   				std::exit(1);
+    			arma::vec ytilde =  feature.rows(ytilde_indicies) * kernel_;
+
+    			//%Convert to percent signal change
+    			double meanCurrent = arma::mean(ytilde);
+    			arma::vec brf = (ytilde - meanCurrent)/meanCurrent;
+
+    			//%Compute dEdbrf
+    			arma::vec dEdbrf = brf - data_;
+    			
+    			
+    			//%Compute dbrfdy
+    			//%dbrfdy = numerical_dbrfdy(ytilde);
+
+    			//%Compute dEdy
+    			//%dEdy = dbrfdy%*%dEdbrf
+
+    			arma::vec dEdy = dEdbrf;
+
+    			/*
+					% dEda = dEdf*dfde*deda
+    				%      = (dEdf*dfde)*deda
+    				%      = Dede*deda
+    				// shouldn't just use the kerne_? why need to get identity matrix?
+    			*/
+    			arma::mat dEde = arma::eye<arma::mat>(K, K) * kernel_;
+
+    			//LOG(INFO) << dEde;
+
+    			// back_error = [zeros(1,K-1),dEdy',zeros(1,K-1)];
+
+    			arma::vec back_error = arma::zeros(dEdy.n_elem + 2 * (K-1));
+    			//LOG(INFO) << back_error.n_elem;
+
+    			arma::uvec dEdy_indicies = range_uvec(K-1,K-2+dEdy.n_elem);
+    			
+    			back_error(dEdy_indicies) = dEdy;
+				
+				//%Backpropagate Errors
+    			arma::vec delta = arma::zeros(A);
+    			for(int i = 0; i < A; i ++) {
+    				double active = activation(i);
+
+    				double deda = dsigmoid(active);
+
+    				arma::vec dEda = dEde * deda;
+
+    				arma::vec this_error = back_error(range_uvec(i, (i-1 + K)));
+    				delta(i) = arma::sum(dEda%this_error);
+    				
+    			} 
+
+    			// %Update estimate
+    			activation = activation - delta * lr_;
+
+    			// %Iterate Learning
+    			preverror = currerror;
+    			currerror = arma::sum(dEdbrf%dEdbrf);
+
+    			//LOG(INFO) << currerror;   			
   			}
+
+  			// %Convolve Solved NEV with the HRF Model
+  			arma::vec result = convolve_anev_roi_hrf(encoding, kernel_);
+
+  			// %Prune the data to the observed range
+  			result = result(range_uvec(K-1,result.n_elem-1));
+
+  			// %Normalize to percent signal change
+  			
+  			double m = arma::mean(result);
+  			result = (result - m) / m;
+
+  			return result;
 		}
 
 	private:
