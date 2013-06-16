@@ -172,6 +172,8 @@ ENDIF (Boost_FOUND)
 INCLUDE_DIRECTORIES(${glog_INCLUDE_DIRS})
 LINK_DIRECTORIES(${glog_LIBRARY_DIRS})
 
+
+
 ################################
 # gmock and gtest
 ################################
@@ -189,7 +191,7 @@ LINK_DIRECTORIES(${glog_LIBRARY_DIRS})
           SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/gmock/gmock-${gmock_VERSION}
           BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/gmock-${gmock_VERSION}
           CMAKE_ARGS ${ep_common_compiler_args}
-          BUILD_COMMAND make all install
+          BUILD_COMMAND make
           UPDATE_COMMAND ""
           PATCH_COMMAND ""
           INSTALL_COMMAND ""
@@ -211,8 +213,8 @@ LINK_DIRECTORIES(${glog_LIBRARY_DIRS})
 INCLUDE_DIRECTORIES(${gmock_INCLUDE_DIRS})
 LINK_DIRECTORIES(${gmock_LIBRARY_DIRS})
 
-#INCLUDE_DIRECTORIES(${gtest_INCLUDE_DIRS})
-#LINK_DIRECTORIES(${gtest_LIBRARY_DIRS})
+INCLUDE_DIRECTORIES(${gtest_INCLUDE_DIRS})
+LINK_DIRECTORIES(${gtest_LIBRARY_DIRS})
 
 
 ################################################################################
