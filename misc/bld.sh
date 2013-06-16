@@ -383,7 +383,7 @@ for ar in ${ARS[@]} ; do
 	in_bld=1 # build in the bld area
 	run_conf=1
 	run_bootstrap=0
-    	run_cmake_bootstrap=0
+    run_cmake_bootstrap=0
 	case "$d" in
 	    binutils-*)
 		# Binutils will not compile with strict error
@@ -392,10 +392,10 @@ for ar in ${ARS[@]} ; do
 		CONF_ARGS=(
 		    --disable-cloog-version-check
 		    --disable-werror
-            	    --enable-cloog-backend=isl
+            --enable-cloog-backend=isl
 		    --enable-lto
 		    --enable-libssp
-                    --enable-gold
+            --enable-gold
 		    --prefix=${RTFDIR}
 		    --with-cloog=${RTFDIR}
 		    --with-gmp=${RTFDIR}
@@ -406,6 +406,17 @@ for ar in ${ARS[@]} ; do
 		    CC=${RTFDIR}/bin/gcc
 		    CXX=${RTFDIR}/bin/g++
 		)
+        # We need to make a special fix here to the configure
+        # script because it chokes on ppl 1.x.
+        src="$sd/configure"
+        if [ -f $src ] ; then
+            if [ ! -f $src.orig ] ; then
+            mv $src $src.orig
+            sed -e 's/#if PPL_VERSION_MAJOR != 0 || PPL_VERSION_MINOR < 11/#if PPL_VERSION_MAJOR != 1/' \
+                $src.orig > $src
+            chmod a+x $src
+            fi
+        fi
 		;;
 
 	    boost_*)
@@ -502,14 +513,14 @@ for ar in ${ARS[@]} ; do
 		)
 		;;
 	
-	ppl-*)
-                CONF_ARGS=(
-                    --prefix=${RTFDIR}
-                    --with-gmp=${RTFDIR}
-                )
-                ;;
+	    ppl-*)
+        CONF_ARGS=(
+            --prefix=${RTFDIR}
+            --with-gmp=${RTFDIR}
+        )
+        ;;
 
-        boost_*)
+        cmake-*)
         # The boost configuration scheme requires
         # that the build occur in the source directory.
         run_conf=0
@@ -543,8 +554,8 @@ for ar in ${ARS[@]} ; do
 	fi
 	if (( $run_cmake_bootstrap )) ; then
 	    docmd $ar which g++
-	    docmd $ar $sd/bootstrap.sh --help
-	    docmd $ar $sd/bootstrap.sh ${CONF_ARGS[@]}
+	    docmd $ar $sd/bootstrap --help
+	    docmd $ar $sd/bootstrap ${CONF_ARGS[@]}
 	    docmd $ar make
 	    docmd $ar make install
 	fi

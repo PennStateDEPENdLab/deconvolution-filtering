@@ -5,10 +5,12 @@
 #
 CMAKE_MINIMUM_REQUIRED (VERSION 2.8.10)
 #CFLAGS="-arch x86_64" CXXFLAGS="-arch x86_64"
-set(CONFIGURATE_CFLAGS "-I/usr/local/include -I/usr/include")
-set(CONFIGURATE_CXXFLAGS "-I/usr/local/include -I/usr/include")
-set(CONFIGURATE_LDFLAGS "-L/usr/local/lib -L/usr/lib ")
-
+set(CONFIGURATE_CFLAGS "-I/home/jbian/local/include -I/usr/local/include -I/usr/include")
+set(CONFIGURATE_CXXFLAGS "-I/home/jbian/local/include -I/usr/local/include -I/usr/include")
+set(CONFIGURATE_LDFLAGS "-Wl,-rpath=/home/jbian/local/lib64 -L/home/jbian/local/lib64 -L/home/jbian/local/lib -L/usr/local/lib -L/usr/lib ")
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-rpath=/home/jbian/local/lib64")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath=/home/jbian/local/lib64")
+set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,-rpath=/home/jbian/local/lib64")
 
 if (NOT _MAC_DEPENDENCY_PATHS)
 set(_MAC_DEPENDENCY_PATHS)
