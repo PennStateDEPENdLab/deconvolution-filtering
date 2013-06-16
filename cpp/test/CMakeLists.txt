@@ -1,6 +1,6 @@
 FILE (GLOB_RECURSE test_SRCS *.cpp *.cxx *.cc *.C *.c *.h *.hpp)
 SET (test_LIBS ${Boost_LIBRARIES} ${glog_LIBRARIES} pthread gmock_main) ### ${PROJECT_NAME} header only don't link ${PROJECT_NAME}
-SET (test_BIN ${PROJECT_NAME}_test)
+SET (test_BIN ${PROJECT_NAME}_sanity_check_test)
 
 IF (NOT CMAKE_CROSSCOMPILING)
     LINK_DIRECTORIES(${MAINFOLDER}/lib)

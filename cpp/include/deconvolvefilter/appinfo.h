@@ -11,7 +11,7 @@
  */
  
 #define APPLICATION_NAME               "Deconvolve filter"
-#define APPLICATION_CODENAME           "ted"
+#define APPLICATION_CODENAME           "deconvolvefilter"
 #define APPLICATION_COPYRIGHT_YEARS    "2013"
 /* #undef APPLICATION_VERSION_MAJOR */
 /* #undef APPLICATION_VERSION_MINOR */

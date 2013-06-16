@@ -75,7 +75,7 @@ void draw_progress_bar(double percent) {
   
   std::cout << "\r" "[" << progress << "] ";
   std::cout.width( 3 );
-  std::cout << (static_cast<int>(100 * percent)) << "%" << std::flush;
+  std::cout << (static_cast<int>(100 * percent)) << "%" << std::endl << std::flush;
 }
 
 void deconvolvefilter(const std::string& datafile, const std::string& outputfile) { 

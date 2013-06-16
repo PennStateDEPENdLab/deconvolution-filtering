@@ -4,13 +4,10 @@
 # Project Properties
 #
 CMAKE_MINIMUM_REQUIRED (VERSION 2.8.10)
-#CFLAGS="-arch x86_64" CXXFLAGS="-arch x86_64"
-set(CONFIGURATE_CFLAGS "-I/home/jbian/local/include -I/usr/local/include -I/usr/include")
-set(CONFIGURATE_CXXFLAGS "-I/home/jbian/local/include -I/usr/local/include -I/usr/include")
-set(CONFIGURATE_LDFLAGS "-Wl,-rpath=/home/jbian/local/lib64 -L/home/jbian/local/lib64 -L/home/jbian/local/lib -L/usr/local/lib -L/usr/lib ")
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-rpath=/home/jbian/local/lib64")
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath=/home/jbian/local/lib64")
-set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,-rpath=/home/jbian/local/lib64")
+
+set(CONFIGURATE_CFLAGS "${CONFIGURATE_CFLAGS} -I/usr/local/include -I/usr/include")
+set(CONFIGURATE_CXXFLAGS "${CONFIGURATE_CXXFLAGS} -I/usr/local/include -I/usr/include")
+set(CONFIGURATE_LDFLAGS "${CONFIGURATE_LDFLAGS} -L/usr/local/lib -L/usr/lib ")
 
 if (NOT _MAC_DEPENDENCY_PATHS)
 set(_MAC_DEPENDENCY_PATHS)
@@ -33,7 +30,7 @@ set(_MAC_DEPENDENCY_PATHS)
 endif ()
 
 
-PROJECT (ted)
+PROJECT (deconvolvefilter)
 SET (APPLICATION_NAME "Deconvolve filter")
 SET (APPLICATION_CODENAME "${PROJECT_NAME}")
 SET (APPLICATION_COPYRIGHT_YEARS "2013")
@@ -192,7 +189,7 @@ LINK_DIRECTORIES(${glog_LIBRARY_DIRS})
           SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/gmock/gmock-${gmock_VERSION}
           BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/gmock-${gmock_VERSION}
           CMAKE_ARGS ${ep_common_compiler_args}
-          BUILD_COMMAND make
+          BUILD_COMMAND make all install
           UPDATE_COMMAND ""
           PATCH_COMMAND ""
           INSTALL_COMMAND ""
@@ -214,8 +211,8 @@ LINK_DIRECTORIES(${glog_LIBRARY_DIRS})
 INCLUDE_DIRECTORIES(${gmock_INCLUDE_DIRS})
 LINK_DIRECTORIES(${gmock_LIBRARY_DIRS})
 
-INCLUDE_DIRECTORIES(${gtest_INCLUDE_DIRS})
-LINK_DIRECTORIES(${gtest_LIBRARY_DIRS})
+#INCLUDE_DIRECTORIES(${gtest_INCLUDE_DIRS})
+#LINK_DIRECTORIES(${gtest_LIBRARY_DIRS})
 
 
 ################################################################################
