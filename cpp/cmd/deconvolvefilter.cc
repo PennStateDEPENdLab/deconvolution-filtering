@@ -39,6 +39,8 @@ DEFINE_double(eps, 0.005,
                  "epsilon, stop criteria, the algorithm converges when error < eps e.g., -eps=0.005");
 DEFINE_int32(thread, 8,
                  "number of concurrent threads, you should set this based on number of cores the machine has, e.g., quad-core machine with hyperthread enabled should set this to 8 (default) ");
+DEFINE_bool(convolved, true,
+                 "whether to output raw neuronal events or convolve the activation with hrf; (default to convolved results) ");
 
 static bool requiredStringFlag(const char* flagname, const std::string& value) {
    if(value.empty()){
@@ -86,7 +88,7 @@ void deconvolvefilter(const std::string& datafile, const std::string& outputfile
     ThreadPool pool(FLAGS_thread);
     std::vector< std::future<void> > futures;    
     
-   
+    bool convolve = FLAGS_convolved;
     double FO = FLAGS_fo; //0.5;
     int HRF_d = FLAGS_hrf_d; // 6
     vec hrf = df::hrf(1/FO, HRF_d);
@@ -131,7 +133,7 @@ void deconvolvefilter(const std::string& datafile, const std::string& outputfile
 
             futures.push_back(
                 pool.enqueue([i,x,hrf,lr,eps](void) -> void {
-                    DeconvovleFilterTask task(x, hrf, lr, eps);
+                    DeconvovleFilterTask task(x, hrf, lr, eps, convolve);
                     std::stringstream ss;
                     ss << setprecision(6) << task.run().t();
                     

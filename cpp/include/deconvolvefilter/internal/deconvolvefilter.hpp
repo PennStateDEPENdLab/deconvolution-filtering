@@ -167,7 +167,7 @@ namespace df {
 	public:
 
 		// data, FO, HRD_d, learning rate, and epsilon
-		DeconvovleFilterTask(const arma::vec& data, const arma::vec& kernel, double lr, double eps) : data_(data), kernel_(kernel), lr_(lr), eps_(eps) {
+		DeconvovleFilterTask(const arma::vec& data, const arma::vec& kernel, double lr, double eps, bool convolve = true) : data_(data), kernel_(kernel), lr_(lr), eps_(eps), convolve_(convolve) {
 
 		}
 
@@ -295,18 +295,21 @@ namespace df {
 	
   			}
 
-  			// %Convolve Solved NEV with the HRF Model
-  			arma::vec result = convolve_anev_roi_hrf(encoding, kernel_);
+            if (convolve){
+                // %Convolve Solved NEV with the HRF Model
+                arma::vec result = convolve_anev_roi_hrf(encoding, kernel_);
 
-  			// %Prune the data to the observed range
-  			result = result(range_uvec(K-1,result.n_elem-1));
+                // %Prune the data to the observed range
+                result = result(range_uvec(K-1,result.n_elem-1));
 
-  			// %Normalize to percent signal change
-  			
-  			double m = arma::mean(result);
-  			result = (result - m) / m;
-
-  			return result;
+                // %Normalize to percent signal change
+                
+                double m = arma::mean(result);
+                result = (result - m) / m;
+                return result;
+            }else{
+                return encoding;
+            }
 		}
 
 	private:
@@ -316,6 +319,7 @@ namespace df {
 
 		double lr_;
 		double eps_;
+        bool convolve = true;
 	};
 
 }
