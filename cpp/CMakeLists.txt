@@ -3,7 +3,7 @@
 #
 # Project Properties
 #
-CMAKE_MINIMUM_REQUIRED (VERSION 3.0.0)
+CMAKE_MINIMUM_REQUIRED (VERSION 2.8.10)
 
 set(CONFIGURATE_CFLAGS "${CONFIGURATE_CFLAGS} -I/usr/local/include -I/usr/include")
 set(CONFIGURATE_CXXFLAGS "${CONFIGURATE_CXXFLAGS} -I/usr/local/include -I/usr/include")
@@ -16,8 +16,8 @@ set(_MAC_DEPENDENCY_PATHS)
     # prepended to the default, so that is fixed here.
     if (APPLE)
     # this is using homebrew, change the paths to use MacPorts or Fink
-      set(CMAKE_C_COMPILER /usr/local/bin/gcc-4.9)
-      set(CMAKE_CXX_COMPILER /usr/local/bin/g++-4.9)
+      set(CMAKE_C_COMPILER /usr/local/bin/gcc-4.8)
+      set(CMAKE_CXX_COMPILER /usr/local/bin/g++-4.8)
       set(CMAKE_OSX_ARCHITECTURES x86_64)
       #list(INSERT CMAKE_SYSTEM_PREFIX_PATH 0 /opt/local) # MacPorts
       #list(INSERT CMAKE_SYSTEM_PREFIX_PATH 0 /sw)        # Fink
@@ -33,8 +33,8 @@ endif ()
 PROJECT (deconvolvefilter)
 SET (APPLICATION_NAME "Deconvolve filter")
 SET (APPLICATION_CODENAME "${PROJECT_NAME}")
-SET (APPLICATION_COPYRIGHT_YEARS "2014")
-SET (APPLICATION_VERSION_MAJOR 1)
+SET (APPLICATION_COPYRIGHT_YEARS "2013")
+SET (APPLICATION_VERSION_MAJOR 0)
 SET (APPLICATION_VERSION_MINOR 0)
 SET (APPLICATION_VERSION_PATCH 1)
 SET (APPLICATION_VERSION_TYPE SNAPSHOT)
@@ -82,7 +82,7 @@ ENDIF(DEBUG_MODE MATCHES "ON")
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
   execute_process(
     COMMAND ${CMAKE_CXX_COMPILER} -dumpversion OUTPUT_VARIABLE GCC_VERSION)
-  if (NOT (GCC_VERSION VERSION_GREATER 4.9 OR GCC_VERSION VERSION_EQUAL 4.9))
+  if (NOT (GCC_VERSION VERSION_GREATER 4.8 OR GCC_VERSION VERSION_EQUAL 4.8))
     message(FATAL_ERROR "${PROJECT_NAME} requires g++ 4.8 or greater.")
   endif ()
 elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
@@ -127,11 +127,11 @@ IF (BOOST_ROOT)
   set(Boost_NO_SYSTEM_PATHS true)
 ENDIF ()
 
-SET (Boost_ADDITIONAL_VERSIONS "1.55" "1.55.0")
+SET (Boost_ADDITIONAL_VERSIONS "1.53" "1.53.0" "1.52" "1.52.0")
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON) 
 #set(Boost_USE_STATIC_RUNTIME ON)
-FIND_PACKAGE (Boost 1.55 COMPONENTS "date_time" "filesystem" "iostreams" "regex" "serialization" "system" REQUIRED)
+FIND_PACKAGE (Boost 1.52 COMPONENTS "date_time" "filesystem" "iostreams" "regex" "serialization" "system" REQUIRED)
 IF (Boost_FOUND)
   INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
   LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
@@ -285,10 +285,11 @@ ENDIF(ENABLE_GPERF_TOOLS MATCHES "ON")
 ################################################################################
 
   set(ep_common_compiler_args
-   -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER} -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+   -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER} 
+   -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
    )
 
-  set(armadillo_VERSION 4.320.0)
+  set(armadillo_VERSION 3.900.4)
   set(ep_armadillo_compiler_args
     ${ep_common_compiler_args}
     -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/armadillo-${armadillo_VERSION}
@@ -346,7 +347,7 @@ ENDFOREACH (CONFIGINPUT ${CONFIGINPUTS})
 # Add Build Targets
 #
 ADD_SUBDIRECTORY(src)
-#ADD_SUBDIRECTORY(test)
+ADD_SUBDIRECTORY(test)
 
 #
 # Add Install Targets
@@ -379,7 +380,7 @@ set(build_summary
     "\nglog:             ${glog_VERSION}"
     "\nBoost:            ${Boost_VERSION}: ${Boost_LIBRARY_DIRS}; ${Boost_LIBRARIES}"
     "\nGperftools:       ${WITH_GPERF_TOOLS}"
-    "\narmadillo:        ${armadillo_INCLUDE_DIRS} ${ep_armadillo_compiler_args}"
+    "\narmadillo:        ${armadillo_INCLUDE_DIRS}"
     "\nDoxygen:          ${DOXYGEN_VERSION}"
     "\n"
     "\n===========================================================\n")
