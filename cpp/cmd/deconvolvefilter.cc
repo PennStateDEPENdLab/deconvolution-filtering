@@ -132,7 +132,7 @@ void deconvolvefilter(const std::string& datafile, const std::string& outputfile
             x = x - m;
 
             futures.push_back(
-                pool.enqueue([i,x,hrf,lr,eps](void) -> void {
+                pool.enqueue([i,x,hrf,lr,eps,convolve](void) -> void {
                     DeconvovleFilterTask task(x, hrf, lr, eps, convolve);
                     std::stringstream ss;
                     ss << setprecision(6) << task.run().t();

@@ -295,7 +295,7 @@ namespace df {
 	
   			}
 
-            if (convolve){
+            if (convolve_){
                 // %Convolve Solved NEV with the HRF Model
                 arma::vec result = convolve_anev_roi_hrf(encoding, kernel_);
 
@@ -319,7 +319,7 @@ namespace df {
 
 		double lr_;
 		double eps_;
-        bool convolve = true;
+        bool convolve_ = true;
 	};
 
 }
