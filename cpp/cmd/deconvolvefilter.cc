@@ -102,6 +102,7 @@ void deconvolvefilter(const std::string& datafile, const std::string& outputfile
 
     LOG(INFO) << "processing " << datafile << "; result will be saved in " << outputfile;
     LOG(INFO) << "thread pool size: " << FLAGS_thread;
+    LOG(INFO) << "convolve the result?: " << FLAGS_convolved;
     LOG(INFO) << "parameters: FO = " << FO << "; HRF_d = " << HRF_d << "; lr = " << lr << "; eps = " << eps;
 
     if (!boost::filesystem::exists(datafile)) {
