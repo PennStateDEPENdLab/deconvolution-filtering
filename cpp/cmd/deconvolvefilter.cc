@@ -119,11 +119,21 @@ void deconvolvefilter(const std::string& datafile, const std::string& outputfile
             arma::vec x(line);
             
             //LOG(INFO) << "at: " << i;
-            
-            if( arma::sum(x) == 0.0) {
-                std::stringstream ss;
-                ss << setprecision(6) << x.t();
 
+	    //handle constant time series
+	    //use SD, not sum 0
+            //if( arma::sum(x) == 0.0) {
+	    
+	    if ( arma::stddev(x) < 1e-5 ) {
+                std::stringstream ss;
+
+		//ss << setprecision(6) << x.t();
+
+		arma::vec xnan = arma::zeros<arma::vec>(x.n_elem) * datum::nan;
+		ss << setprecision(6) << xnan.t();
+
+		LOG(INFO) << "Warning: constant time series detected at: " << i << ". Returning NaN";
+		
                 save(i, ss.str());
                 continue;
             }
@@ -159,7 +169,7 @@ void deconvolvefilter(const std::string& datafile, const std::string& outputfile
     std::cout << std::endl << std::flush;
 
     // don't really need to wait, just good practice to ensure threads are cleaned out
-    for(size_t i = 0;i<futures.size();++i){
+    for(size_t i = 0; i<futures.size(); ++i) {
         futures[i].wait();
     }
 

@@ -9,6 +9,10 @@ set(CONFIGURATE_CFLAGS "${CONFIGURATE_CFLAGS} -I/usr/local/include -I/usr/includ
 set(CONFIGURATE_CXXFLAGS "${CONFIGURATE_CXXFLAGS} -I/usr/local/include -I/usr/include")
 set(CONFIGURATE_LDFLAGS "${CONFIGURATE_LDFLAGS} -L/usr/local/lib -L/usr/lib ")
 
+set(CMAKE_C_COMPILER /opt/rh/devtoolset-4/root/usr/bin/gcc)
+set(CMAKE_CXX_COMPILER /opt/rh/devtoolset-4/root/usr/bin/g++)
+
+
 if (NOT _MAC_DEPENDENCY_PATHS)
 set(_MAC_DEPENDENCY_PATHS)
     # As of CMake 2.8.3, Fink and MacPorts search paths are appended to the
@@ -79,17 +83,17 @@ ELSE()
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}")
 ENDIF(DEBUG_MODE MATCHES "ON")
 
-if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
-  execute_process(
-    COMMAND ${CMAKE_CXX_COMPILER} -dumpversion OUTPUT_VARIABLE GCC_VERSION)
-  if (NOT (GCC_VERSION VERSION_GREATER 4.8 OR GCC_VERSION VERSION_EQUAL 4.8))
-    message(FATAL_ERROR "${PROJECT_NAME} requires g++ 4.8 or greater.")
-  endif ()
-elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
-else()
-  message(FATAL_ERROR "Your C++ compiler does not support C++11.")
-endif ()
+#if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
+#  execute_process(
+#    COMMAND ${CMAKE_CXX_COMPILER} -dumpversion OUTPUT_VARIABLE GCC_VERSION)
+#  if (NOT (GCC_VERSION VERSION_GREATER 4.8 OR GCC_VERSION VERSION_EQUAL 4.8))
+#    message(FATAL_ERROR "${PROJECT_NAME} requires g++ 4.8 or greater.")
+#  endif ()
+#elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+#  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+#else()
+#  message(FATAL_ERROR "Your C++ compiler does not support C++11.")
+#endif ()
 
 
 #
@@ -144,13 +148,20 @@ ENDIF (Boost_FOUND)
 # glog
 ################################
 
+INCLUDE(FindPkgConfig)
+IF(PKG_CONFIG_FOUND)
+  PKG_CHECK_MODULES(glog libglog)
+  if(NOT glog_FOUND)
+  message("glog library not found")
+
   set(glog_VERSION trunk)
   set(glog_CONFIGURE ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glog/glog-${glog_VERSION}/configure)
   include(ExternalProject)
   ExternalProject_Add(
           glog-${glog_VERSION}
           PREFIX ${CMAKE_CURRENT_BINARY_DIR}/glog-${glog_VERSION}
-          SVN_REPOSITORY http://google-glog.googlecode.com/svn/trunk/
+          #SVN_REPOSITORY http://google-glog.googlecode.com/svn/trunk/
+	  GIT_REPOSITORY git@github.com:google/glog.git
           SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glog/glog-${glog_VERSION}
           BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/glog-${glog_VERSION}
           CONFIGURE_COMMAND ${glog_CONFIGURE} --prefix=${CMAKE_CURRENT_BINARY_DIR}/glog-${glog_VERSION} CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} CFLAGS=${CONFIGURATE_CFLAGS} CXXFLAGS=${CONFIGURATE_CXXFLAGS} LDFLAGS=${CONFIGURATE_LDFLAGS}
@@ -169,6 +180,8 @@ ENDIF (Boost_FOUND)
      set(glog_LIBRARY_DIRS
           ${CMAKE_CURRENT_BINARY_DIR}/glog-${glog_VERSION}/lib
      )
+     endif(NOT glog_FOUND)
+ENDIF(PKG_CONFIG_FOUND)
 INCLUDE_DIRECTORIES(${glog_INCLUDE_DIRS})
 LINK_DIRECTORIES(${glog_LIBRARY_DIRS})
 
@@ -177,7 +190,22 @@ LINK_DIRECTORIES(${glog_LIBRARY_DIRS})
 ################################
 # gmock and gtest
 ################################
-  set(ep_common_compiler_args
+IF(PKG_CONFIG_FOUND)
+  PKG_CHECK_MODULES(gtest_main gtest_main)
+  if(NOT gtest_main_FOUND)
+  message (" gtest_main library has not been found.")
+  endif(NOT gtest_main_FOUND)
+ENDIF(PKG_CONFIG_FOUND)
+
+
+INCLUDE(FindPkgConfig)
+IF(PKG_CONFIG_FOUND)
+  PKG_CHECK_MODULES(googletest gtest)
+  if(NOT googletest_FOUND)
+  message (" gtest library has not been found.")
+    message (" gtest will be downloaded and built automatically ")
+
+set(ep_common_compiler_args
    -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER} 
    -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
    )
@@ -187,9 +215,10 @@ LINK_DIRECTORIES(${glog_LIBRARY_DIRS})
   ExternalProject_Add(
           gmock-${gmock_VERSION}
           PREFIX ${CMAKE_CURRENT_BINARY_DIR}/gmock-${gmock_VERSION}
-          SVN_REPOSITORY http://googlemock.googlecode.com/svn/trunk/
-          SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/gmock/gmock-${gmock_VERSION}
-          BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/gmock-${gmock_VERSION}
+          #SVN_REPOSITORY http://googlemock.googlecode.com/svn/trunk/
+	  GIT_REPOSITORY git@github.com:google/googlemock.git
+          SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/gmock/gmock-${gmock_VERSION}/googlemock
+          BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/gmock-${gmock_VERSION}/googlemock
           CMAKE_ARGS ${ep_common_compiler_args}
           BUILD_COMMAND make
           UPDATE_COMMAND ""
@@ -198,7 +227,7 @@ LINK_DIRECTORIES(${glog_LIBRARY_DIRS})
      )
 # Set up variables
      set(gmock_INCLUDE_DIRS
-          ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/gmock/gmock-${gmock_VERSION}/include
+          ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/gmock/gmock-${gmock_VERSION}/googlemock/include
      )
      set(gmock_LIBRARY_DIRS
           ${CMAKE_CURRENT_BINARY_DIR}/gmock-${gmock_VERSION}
@@ -209,12 +238,37 @@ LINK_DIRECTORIES(${glog_LIBRARY_DIRS})
      set(gtest_LIBRARY_DIRS
           ${CMAKE_CURRENT_BINARY_DIR}/gmock-${gmock_VERSION}/gtest
      )
+  endif(NOT googletest_FOUND)
+ENDIF(PKG_CONFIG_FOUND)
+
+
+IF(PKG_CONFIG_FOUND)
+  PKG_CHECK_MODULES(gmock_main gmock_main)
+  if(NOT gmock_main_FOUND)
+  message (" gmock_main library has not been found.")
+  endif(NOT gmock_main_FOUND)
+ENDIF(PKG_CONFIG_FOUND)
+
+IF(PKG_CONFIG_FOUND)
+  PKG_CHECK_MODULES(gmock gmock)
+  if(NOT gmock_FOUND)
+  message (" googlemock library has not been found.")
+  endif(NOT gmock_FOUND)
+ENDIF(PKG_CONFIG_FOUND)
+
+INCLUDE_DIRECTORIES(${gmock_main_INCLUDE_DIRS})
+LINK_DIRECTORIES(${gmock_main_LIBRARY_DIRS})
 
 INCLUDE_DIRECTORIES(${gmock_INCLUDE_DIRS})
 LINK_DIRECTORIES(${gmock_LIBRARY_DIRS})
 
-INCLUDE_DIRECTORIES(${gtest_INCLUDE_DIRS})
-LINK_DIRECTORIES(${gtest_LIBRARY_DIRS})
+INCLUDE_DIRECTORIES(${gtest_main_INCLUDE_DIRS})
+LINK_DIRECTORIES(${gtest_main_LIBRARY_DIRS})
+
+INCLUDE_DIRECTORIES(${gtest_main_INCLUDE_DIRS})
+LINK_DIRECTORIES(${gtest_main_LIBRARY_DIRS})
+
+
 
 
 ################################################################################
@@ -223,7 +277,7 @@ LINK_DIRECTORIES(${gtest_LIBRARY_DIRS})
 
 INCLUDE(FindPkgConfig)
 IF(PKG_CONFIG_FOUND)
-  PKG_CHECK_MODULES(gflags libgflags)
+  PKG_CHECK_MODULES(gflags gflags)
   if(NOT gflags_FOUND)
   message (" gflags library has not been found.")
     message (" gflags will be downloaded and built automatically ")
@@ -234,7 +288,8 @@ IF(PKG_CONFIG_FOUND)
       ExternalProject_Add(
             gflags-${gflags_VERSION}
             PREFIX ${CMAKE_CURRENT_BINARY_DIR}/gflags-${gflags_VERSION}
-            SVN_REPOSITORY http://gflags.googlecode.com/svn/trunk/
+            #SVN_REPOSITORY http://gflags.googlecode.com/svn/trunk/
+	    GIT_REPOSITORY https://github.com/gflags/gflags
             DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR}/download/gflags-${gflags_VERSION}
             SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/gflags/gflags-${gflags_VERSION}
             BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/gflags-${gflags_VERSION}
@@ -298,7 +353,8 @@ ENDIF(ENABLE_GPERF_TOOLS MATCHES "ON")
   ExternalProject_Add(
           armadillo-${armadillo_VERSION}
           PREFIX ${CMAKE_CURRENT_BINARY_DIR}/armadillo-${armadillo_VERSION}
-          URL http://sourceforge.net/projects/arma/files/armadillo-${armadillo_VERSION}.tar.gz
+	  URL /gpfs/group/mnh5174/default/lab_resources/deconvolution-filtering/cpp/armadillo-3.900.4.tar.gz
+          #URL http://sourceforge.net/projects/arma/files/armadillo-${armadillo_VERSION}.tar.gz
           DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR}/download/armadillo-${armadillo_VERSION}
           SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/armadillo/armadillo-${armadillo_VERSION}
           BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/armadillo-${armadillo_VERSION}
